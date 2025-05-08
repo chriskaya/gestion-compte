@@ -13,9 +13,12 @@ use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Validator\Constraints\DateTime;
 
@@ -156,6 +159,8 @@ class AmbassadorController extends Controller
      */
     public function memberShiftTimeLogAction(Request $request, SearchUserFormHelper $formHelper)
     {
+        $action = $request->request->get("form")["csv"] ?? null;
+
         $defaults = [
             'withdrawn' => 1,
             'frozen' => 1,
@@ -176,8 +181,40 @@ class AmbassadorController extends Controller
         $order = $form->get('dir')->getData();
         $currentPage = $form->get('page')->getData();
 
-        $limitPerPage = 25;
         $qb = $qb->orderBy($sort, $order);
+
+        // Export CSV
+        if ($action == "csv") {
+            $members = $qb->getQuery()->getResult();
+
+            $data = array_map(function($member) {
+                $names = $member->getBeneficiaries()->map(function($b) { return $b->getFirstname() . " " . $b->getLastname(); });
+                return [
+                    $member->getMemberNumber(),
+                    join($names->toArray(), " & "),
+                    $member->getLastRegistration()->getDate()->format("d/m/Y"),
+                    $member->getShiftTimeCount() / 60
+                ];
+            }, $members);
+
+            $response = new StreamedResponse();
+            $response->setCallback(function () use ($data) {
+                $handle = fopen('php://output', 'wb');
+                foreach ($data as $row) {
+                    fputcsv($handle, $row, ',');
+                }
+                fclose($handle);
+            });
+
+            $response->setStatusCode(Response::HTTP_OK);
+            $response->headers->set('Content-Encoding', 'UTF-8');
+            $response->headers->set('Content-Type', 'text/csv');
+            $response->headers->set('Content-Disposition', 'attachment; filename="relances_créneaux_' . date('dmyhis') . '.csv"');
+
+            return $response;
+        }
+
+        $limitPerPage = 25;
         $paginator = new Paginator($qb);
         $resultCount = count($paginator);
         $pageCount = ($resultCount == 0) ? 1 : ceil($resultCount / $limitPerPage);
