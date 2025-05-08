@@ -187,20 +187,16 @@ class AmbassadorController extends Controller
         if ($action == "csv") {
             $members = $qb->getQuery()->getResult();
 
-            $data = array_map(function($member) {
-                $names = $member->getBeneficiaries()->map(function($b) { return $b->getFirstname() . " " . $b->getLastname(); });
-                return [
-                    $member->getMemberNumber(),
-                    join($names->toArray(), " & "),
-                    $member->getLastRegistration()->getDate()->format("d/m/Y"),
-                    $member->getShiftTimeCount() / 60
-                ];
-            }, $members);
-
-            $response = new StreamedResponse();
-            $response->setCallback(function () use ($data) {
+            $response = new StreamedResponse(function () use ($members) {
                 $handle = fopen('php://output', 'wb');
-                foreach ($data as $row) {
+                foreach ($members as $member) {
+                    $names = $member->getBeneficiaries()->map(function($b) { return $b->getFirstname() . " " . $b->getLastname(); });
+                    $row = [
+                        $member->getMemberNumber(),
+                        join($names->toArray(), " & "),
+                        $member->getLastRegistration()->getDate()->format("d/m/Y"),
+                        $member->getShiftTimeCount() / 60
+                    ];
                     fputcsv($handle, $row, ',');
                 }
                 fclose($handle);
