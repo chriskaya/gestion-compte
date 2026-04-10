@@ -1,5 +1,90 @@
 # Changelog
 
+## [1.47.2](https://github.com/chriskaya/gestion-compte/compare/v1.47.2...v1.47.2) (2026-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* changement des arguments de la commande app:code:update_igloohome
+
+### Nouveautés
+
+* Correctifs pour utiliser symfony4 ([0a860c0](https://github.com/chriskaya/gestion-compte/commit/0a860c0ea06c064bddab6e9f3af55cce0791b8c9))
+* **logs:** Permettre d'envoyer les logs symfony vers stdout. ([86ec3b9](https://github.com/chriskaya/gestion-compte/commit/86ec3b9f61dce8d0aa406067fea30705989aca0e))
+* **oidc:** Passer la version de Keycloak en paramètre aux packages oauth, pour éviter les erreurs de communication entre Elefan et Keycloak. ([d81dd59](https://github.com/chriskaya/gestion-compte/commit/d81dd595688758ea6aa3b6e6bab1f92aca4860d0))
+* **remplacer SwiftMailer:** Configuration de Mailer. ([1413cfd](https://github.com/chriskaya/gestion-compte/commit/1413cfd30239ab89649b577fe4662e41f4b5991b))
+* **remplacer SwiftMailer:** Faire fonctionner l'envoi des mails 'mot de passe oublié' et de bienvenue. ([aa7150c](https://github.com/chriskaya/gestion-compte/commit/aa7150c5cf42c953ea139300ea9053537eb3ca50))
+* **remplacer SwiftMailer:** Installer Mailer. ([3d9e8b5](https://github.com/chriskaya/gestion-compte/commit/3d9e8b59987dfc4199e193f68e048401b4c2faad))
+* **remplacer SwiftMailer:** Remplacer tous les `Swift_Message` par des `Email`. ([8371285](https://github.com/chriskaya/gestion-compte/commit/83712859f3cd086385a910476d98d15ba0caa6c9))
+* **remplacer SwiftMailer:** Suppression des configurations SwiftMailer. ([11ebfff](https://github.com/chriskaya/gestion-compte/commit/11ebfffb6341d6d79f0820a39f1e9cfff9d44d0a))
+* Un paramètre pour pouvoir désactiver la copie du mail de réservation de créneau ([#1196](https://github.com/chriskaya/gestion-compte/issues/1196)) ([e466201](https://github.com/chriskaya/gestion-compte/commit/e466201a8e9ed96c4242dad4ae4f3e3243c37885))
+* utilisation de la nouvelle api igloohome ([#1168](https://github.com/chriskaya/gestion-compte/issues/1168)) ([97b0a76](https://github.com/chriskaya/gestion-compte/commit/97b0a764ec32a6ec69ef1b9b681a0395267c23e0))
+
+
+### Corrections (bugs, typos...)
+
+* **Adhésion rapide:** Bons champs sélectionnés en jQuery pour désactiver la saisie du montant si on passe par HelloAsso. ([53e5e36](https://github.com/chriskaya/gestion-compte/commit/53e5e366cddda80d511cf16b8fb9e94c19ed5739))
+* Ajout d'une vieille version de twig pour le bundle gravatar. ([0babd04](https://github.com/chriskaya/gestion-compte/commit/0babd043dd316b50379399452dafb9ba812ca6f0))
+* **ajout membre commission:** Bug de l'autocomplete de materialize sans `<div class="input-field">` ([64f2ce7](https://github.com/chriskaya/gestion-compte/commit/64f2ce727934d527dc5fee6acd603decd1bb0274))
+* ambassador page filters on members ([acb2e57](https://github.com/chriskaya/gestion-compte/commit/acb2e57e5ea87d81d792af02f63fc1cef7e22f65))
+* Cannot check if an unsubmitted form is valid: Call Form::isSubmitted() before Form::isValid(). ([ee030fc](https://github.com/chriskaya/gestion-compte/commit/ee030fca6d691d1848c47cc48698ee2284400e48))
+* Compatiblité de signature d'une classe de logging avec son interface mère. ([fff3e11](https://github.com/chriskaya/gestion-compte/commit/fff3e112d8be57782c3073579cfe309b608918f8))
+* Configs de prod. ([f4b1474](https://github.com/chriskaya/gestion-compte/commit/f4b14749f92c101b1b6e7f2b5ea0151db9327158))
+* Configuration de la locale pour les dates en français. ([4648460](https://github.com/chriskaya/gestion-compte/commit/4648460e8c607da5d63c5baf352adee444c30a98))
+* correction d'erreurs remontées par phpstan ([#1169](https://github.com/chriskaya/gestion-compte/issues/1169)) ([9da2122](https://github.com/chriskaya/gestion-compte/commit/9da2122419ec7b18a75d3d1ba1b0cf7bdaf464ce))
+* correction du namespace d'un fichier de migration ([b962e04](https://github.com/chriskaya/gestion-compte/commit/b962e04ab1d9870f538fc5b66d86939351a53b7b))
+* correction injection de dépendance dans les controller ([#1184](https://github.com/chriskaya/gestion-compte/issues/1184)) ([b76327f](https://github.com/chriskaya/gestion-compte/commit/b76327fb1586b53a6b40d449df53066ca813ead1))
+* Déplacer le robots..txt dans le bon dossier web/ =&gt; public/. ([d3b952a](https://github.com/chriskaya/gestion-compte/commit/d3b952a1e15ae81b7d4a92d1eab82e8c8c22aab5))
+* **éditeur markdown:** Rendre SimpleMDE accessible partout (était auparavant chargé par `vanilla_top.js`). ([c4440e3](https://github.com/chriskaya/gestion-compte/commit/c4440e308674ec5c1e0d6f5aa46f9cc09edf8464))
+* **édition compte utilisateur:** Le chargement de template twig par chemin relatif le fonctionnait plus. ([6a08a9a](https://github.com/chriskaya/gestion-compte/commit/6a08a9a0ab3313f38a4ce1dce8cb552fab87daf7))
+* **EmailTemplate:** Renommage AppBundle =&gt; App. ([dd7e9d8](https://github.com/chriskaya/gestion-compte/commit/dd7e9d823d85e52810619b638612cae9b498343e))
+* erreur 500 sur le planning, form inexistant ([#1157](https://github.com/chriskaya/gestion-compte/issues/1157)) ([4cf0bac](https://github.com/chriskaya/gestion-compte/commit/4cf0bac7b82cf9fa79a804df3dd0a8ed6dbbbcfd))
+* Erreur dans le typage du booléen et de la chaîne de config pour le bouton gel de compte. ([48a35ee](https://github.com/chriskaya/gestion-compte/commit/48a35ee1247cba19a6b19c235cb2074d052fbd29))
+* erreurs phpstan, utilisation de l'injection de dépendance dans le constructeur pour une methode protected ([#1189](https://github.com/chriskaya/gestion-compte/issues/1189)) ([d2fe688](https://github.com/chriskaya/gestion-compte/commit/d2fe688b1814a3f57c8d262405c0380c9e0d1915))
+* error in ShiftDeletedEvent if no shifter ([e583693](https://github.com/chriskaya/gestion-compte/commit/e58369301a70f619c7fa280bf9e45678989275b2))
+* freeShiftAdminAction should not redirect. ref [#787](https://github.com/chriskaya/gestion-compte/issues/787) ([2b2d50e](https://github.com/chriskaya/gestion-compte/commit/2b2d50e660b2d714eb6aa9ce2cbf67d10553afdb))
+* génération du code barre de badge ([c277d01](https://github.com/chriskaya/gestion-compte/commit/c277d01fa97462270f8802bccaa6eb55d71ebce3))
+* **images:** Les images oubliées du passage à webpack. ([#1195](https://github.com/chriskaya/gestion-compte/issues/1195)) ([987358a](https://github.com/chriskaya/gestion-compte/commit/987358adad7bce8945d02f68d2a226057af16f5e))
+* **javascript cookies:** `myCookieInit` et `Cookies` n'étaient plus accessibles. ([bff6cb1](https://github.com/chriskaya/gestion-compte/commit/bff6cb1623015b1b00882216b2531f91e0f7c42a))
+* **javascript:** La fonction `defer()` précédemment importée par `vanilla_top.js` n'est plus appelable. ([5fa7cee](https://github.com/chriskaya/gestion-compte/commit/5fa7ceee5ded8669e00fdfb16378d33dcce30a30))
+* le paramètre secret n'est plus accessible. Création d'un paramètre dédié aux badges ([cf43083](https://github.com/chriskaya/gestion-compte/commit/cf43083b1877e067c986f659c36a570730009578))
+* **lecteur de carte:** la variable `barcode_submit_url` n'était plus définie. ([c940972](https://github.com/chriskaya/gestion-compte/commit/c9409723faa58b6803d3c7910f84772cdb962c0f))
+* Les dates d'exemptions de bénévolat ne sont pas libres. ([23f6bd1](https://github.com/chriskaya/gestion-compte/commit/23f6bd1980e390075ea906a0495afe2ae9566304))
+* Les noms des adhérents ne sont plus visible dans la gestion des créneaux ([#1154](https://github.com/chriskaya/gestion-compte/issues/1154)) ([689492c](https://github.com/chriskaya/gestion-compte/commit/689492c899ca003e465192b23940046ecfd3d206)), closes [#1153](https://github.com/chriskaya/gestion-compte/issues/1153)
+* Les paramètres de l'appli sont accessibles dans les contrôleurs via `$this->getParameter` (et plus `$this->container->getParameter`). ([6f05bdc](https://github.com/chriskaya/gestion-compte/commit/6f05bdc39ad3cfd1183eed628d1bac62da95edb2))
+* **Mailer:** Cannot autowire argument $mailer: it references class "Symfony\Component\Mailer\Mailer" but no such service exists. Try changing the type-hint to "Symfony\Component\Mailer\MailerInterface" instead. ([69b1ae3](https://github.com/chriskaya/gestion-compte/commit/69b1ae324a8dd2763f3f99b6de53152445657d12))
+* Ne pas autobind les paramètres helloasso pour l'instant. ([daab7f5](https://github.com/chriskaya/gestion-compte/commit/daab7f5c00ffeb1cd3d75f71b6d7f4ac0f6fe207))
+* **nom des champs:** Supprimer l'option `block_prefix` pour éviter l'erreur "Unable to render the form because the block names array contains duplicates". ([6542a34](https://github.com/chriskaya/gestion-compte/commit/6542a3471de769e305b34fbc9d8f8445877be36d))
+* **phpstan:** suppression des fichiers inexistants dans la baseline ([0f4f48f](https://github.com/chriskaya/gestion-compte/commit/0f4f48f9409f136749c989b1bfa74e657106a473))
+* Rajout des paramètres `reserve_new_shift_to_prior_shifter` et `reserve_new_shift_to_prior_shifter_delay`. ([c89f202](https://github.com/chriskaya/gestion-compte/commit/c89f20230fc66c2716df5c9ca40ace6050040e79))
+* Récupérer la favicon elefan dans le nouveau dossier d'assets. ([c855970](https://github.com/chriskaya/gestion-compte/commit/c855970bd7e03cefc540b9d2528832a73bc51205))
+* remove useless migration. ref [#719](https://github.com/chriskaya/gestion-compte/issues/719) ([8ef2957](https://github.com/chriskaya/gestion-compte/commit/8ef29571ad929f2dd03917e7d5234343964bd300))
+* réparation de la CI ([#1185](https://github.com/chriskaya/gestion-compte/issues/1185)) ([2c5857f](https://github.com/chriskaya/gestion-compte/commit/2c5857f454639ece0dc823ed3702f714eef332ae))
+* search form label. admin late registration filter ([c400df8](https://github.com/chriskaya/gestion-compte/commit/c400df8ef80ef1bd67227e6ba537b12ff7e6ca39))
+* **TimeLog:** Ajout de deux variables d'environnement manquantes. ([ce7ca5e](https://github.com/chriskaya/gestion-compte/commit/ce7ca5ea99ba2dd32811e9921d0a53011fc5f4ac))
+* **toasts:** Utiliser l'option `html:` au lieu de `text:` qui affiche un toast sans texte… ([787f778](https://github.com/chriskaya/gestion-compte/commit/787f778fe99d5597a43ef5214a1c468bfa691fd3))
+* utilisation de l'injection de dépendance ([3600683](https://github.com/chriskaya/gestion-compte/commit/3600683a778edf70fab53daef19348b039b340bf))
+* utilisation de l'injection de dépendance, logger n'est pas dispo dans le container du controller ([3555a37](https://github.com/chriskaya/gestion-compte/commit/3555a377fb57a3c71b43cb703e93e1c48cf51213))
+* utilisation de la v5 de l'api helloasso ([#1152](https://github.com/chriskaya/gestion-compte/issues/1152)) ([c9c5565](https://github.com/chriskaya/gestion-compte/commit/c9c5565fd3cac9af3448d7c97eebecd662a8a22f))
+* utilisation du server Symfony plutôt que le serveur de base php ([f229f7f](https://github.com/chriskaya/gestion-compte/commit/f229f7ff1dab38d59e5ff0c873a819079dbb022e))
+
+
+### Technique
+
+* **`ContainerAwareCommand` déprécié:** Injecter les services et paramètres, autres commandes. ([b81ffdd](https://github.com/chriskaya/gestion-compte/commit/b81ffdd82bf09769b76f027f7de5045cf604e0dd))
+* **`ContainerAwareCommand` déprécié:** Injecter les services et paramètres, exemple de la `ShitGenerateCommand`. ([a128545](https://github.com/chriskaya/gestion-compte/commit/a128545a2bfe88ec8ed0ee6b685029c739129199))
+* Accélération de la page réservation de créneau ([#1191](https://github.com/chriskaya/gestion-compte/issues/1191)) ([2dd592f](https://github.com/chriskaya/gestion-compte/commit/2dd592f28e697be30c45149891976f3ed0ad5d8b))
+* ajout d'une Github Action pour assign automatiquement l'auteur ([#1115](https://github.com/chriskaya/gestion-compte/issues/1115)) ([2f64030](https://github.com/chriskaya/gestion-compte/commit/2f64030f5d2a6c1da53aa48a4d0fec52c561a26b))
+* Faire hériter les contrôleurs de `AbstractController` et plus de `Controller`. ([eda5a43](https://github.com/chriskaya/gestion-compte/commit/eda5a43a5decd2621bfc1bf941527bb43e2b5dbd))
+* **Formation:** Ne plus hériter de FOS\UserBundle\Model\Group qui est déprécié depuis symfony 2.2. ([fbbf24a](https://github.com/chriskaya/gestion-compte/commit/fbbf24ac0f61782e059df24af407f0a75d20ae63))
+* **master:** release 1.47.1 ([#1163](https://github.com/chriskaya/gestion-compte/issues/1163)) ([39c7d3f](https://github.com/chriskaya/gestion-compte/commit/39c7d3fde3d5df039a4bfb9a6742db4d2d5b041f))
+* **master:** release 1.47.2 ([#1165](https://github.com/chriskaya/gestion-compte/issues/1165)) ([b305364](https://github.com/chriskaya/gestion-compte/commit/b305364f4d2c7277dcc331d0be07a06866c34157))
+* release 1.47.2 ([43edf01](https://github.com/chriskaya/gestion-compte/commit/43edf0150616dc24418986eef12a780adbbf44f5))
+* **release-please:** ajout d'une Github Action pour vérifier le nom des PR (conventional commits) ([#1162](https://github.com/chriskaya/gestion-compte/issues/1162)) ([1ce5cf8](https://github.com/chriskaya/gestion-compte/commit/1ce5cf820efe2b76144e4e0635a9faa37c7d508c))
+* **release-please:** il manquait le fichier release-please-manifest.json. suite à [#1049](https://github.com/chriskaya/gestion-compte/issues/1049) & [#1155](https://github.com/chriskaya/gestion-compte/issues/1155) ([bca65ed](https://github.com/chriskaya/gestion-compte/commit/bca65edabacaaa3574c48af33d63d14f28aa99d8))
+* **release-please:** maj de la config à la v4 (depuis la v3) ([#1155](https://github.com/chriskaya/gestion-compte/issues/1155)) ([beff8ca](https://github.com/chriskaya/gestion-compte/commit/beff8caf376f8aa7146885cf7181f23a8dedb760))
+* **stale:** maj à la v10. ajout de commentaires dans la config ([#1158](https://github.com/chriskaya/gestion-compte/issues/1158)) ([4eaba83](https://github.com/chriskaya/gestion-compte/commit/4eaba836692a845c05c13854712b03bfe5a4fe57))
+
 ## [1.47.2](https://github.com/elefan-grenoble/gestion-compte/compare/v1.47.1...v1.47.2) (2026-01-24)
 
 
