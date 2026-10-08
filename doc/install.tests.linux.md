@@ -120,6 +120,50 @@ restent aléatoires.
   déjà connecté, sans passer par le formulaire (`loginAs()` reste disponible pour
   tester le formulaire lui-même).
 
+**Mots de passe.** En env `test`, bcrypt tourne au coût 4
+(`config/packages/test/security.yaml`) : au coût par défaut, chaque utilisateur
+persisté coûte ~0,5 s.
+
+**Tests de sécurité** (`tests/Functional/Security`, helpers dans `tests/Support/Security`) :
+
+- `AnonymousRouteAccessTest` parcourt toutes les routes : chacune doit renvoyer un
+  anonyme vers `/login`, sauf celles de sa liste `PUBLIC_ROUTES`, qui doit refléter
+  exactement les règles publiques d'`access_control`. Ajouter une route publique, c'est
+  l'ajouter à cette liste avec sa justification ;
+- `RoleMatrix::cases()` + le trait `ChecksRoleAccess` : matrice route × rôle × résultat
+  attendu (403 sous le rôle minimal, accès au-dessus) à partir de la hiérarchie de
+  `security.yaml` ;
+- `KnownOpenVulnerability::assertSecureOrKnownOpen()` : un test de faille encore ouverte
+  affirme le comportement sûr ; tant que la faille est là il est marqué *incomplete*
+  (la CI reste verte), et une fois corrigée il **échoue** pour qu'on retire l'enveloppe
+  et qu'il devienne un test de non-régression :
+
+  ```php
+  $this->assertSecureOrKnownOpen('C-SEC-1', 'set_email anonyme', function () use ($user) {
+      $this->assertSame('ancien@example.test', $user->getEmail());
+  });
+  ```
+
+**Tests de réservation et d'adhésion** (`tests/Functional/Controller/ShiftController*`,
+`BookingController*`, `MembershipController*`) : assertions sur l'état en base
+(`reloaded()` relit l'entité) et sur les messages flash (`flashes()`), pas seulement
+sur le code HTTP. Le trait `tests/Support/ShiftScenarios` fournit les scénarios :
+
+- `aBookableShift()` : un créneau libre dans un bucket déjà tenu par un autre membre
+  (un débutant ne peut pas ouvrir un bucket, `NEW_USERS_START_AS_BEGINNER`) ;
+- `csrfToken($client, $formName)` : jeton valide pour la session du client (se
+  connecter d'abord) ; les formulaires non nommés (`createFormBuilder()`) s'appellent
+  `form` ;
+- `withEnv([...], $callable)` : fait varier une variable d'environnement lue au boot
+  du noyau (`FORBID_OWN_SHIFT_*_ADMIN`…) ;
+- une entité construite en mémoire reste dans l'identity map du premier appel : appeler
+  `entityManager()->clear()` avant la requête si l'action parcourt ses collections ;
+- `ShiftRepository::functionsResultCache()->clear()` vide le cache de 5 s des cumuls de
+  créneaux, qui fausserait deux réservations enchaînées.
+
+Un bug de production découvert est écrit comme test du comportement cible, marqué
+*incomplete* avec une référence (`SHIFT-…`, `BOOKING-…`, `MEMBER-…`, `I-BUG-10`).
+
 ### PHPStan
 
 ```bash
