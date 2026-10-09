@@ -16,19 +16,13 @@ use App\Helper\SwipeCard;
  * (users, admins, jobs, shifts, events, opening hours, dynamic content, etc.).
  *
  * @internal
- *
- * @coversNothing
  */
 class SmokeTest extends FunctionalTestCase
 {
-    private static bool $fixturesLoaded = false;
-
-    public function setUp(): void
+    public static function setUpBeforeClass(): void
     {
-        if (!self::$fixturesLoaded) {
-            $this->loadFixturesWithGroups(['period']);
-            self::$fixturesLoaded = true;
-        }
+        parent::setUpBeforeClass();
+        static::loadFixtures(['period']);
     }
 
     // -------------------------------------------------------
@@ -141,8 +135,13 @@ class SmokeTest extends FunctionalTestCase
 
         // Failed login redirects back to login
         $this->assertTrue($client->getResponse()->isRedirect());
-        $client->followRedirect();
+        $crawler = $client->followRedirect();
         $this->assertSame(200, $client->getResponse()->getStatusCode());
+
+        // ... which tells the user the credentials were refused
+        $error = $crawler->filterXPath("//div[contains(concat(' ', normalize-space(@class), ' '), ' card-panel ') and contains(concat(' ', normalize-space(@class), ' '), ' error ')]");
+        $this->assertCount(1, $error, 'The login page should display an error.');
+        $this->assertMatchesRegularExpression('/^(Identifiants invalides|Invalid credentials)\.$/', trim($error->text()));
     }
 
     // -------------------------------------------------------
@@ -553,6 +552,9 @@ class SmokeTest extends FunctionalTestCase
      * set_email (the #1245 temp-email activation flow) always renders
      * beneficiary/confirm.html.twig regardless of branch taken — it must
      * never redirect to /login.
+     *
+     * This public access is the C-SEC-1 hole (Security\SetEmailSecurityTest):
+     * the fix will replace this test.
      */
     public function testSetEmailIsPubliclyReachable(): void
     {

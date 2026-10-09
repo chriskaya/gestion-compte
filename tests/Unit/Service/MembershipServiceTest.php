@@ -12,8 +12,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 /**
  * @internal
- *
- * @coversNothing
  */
 class MembershipServiceTest extends TestCase
 {
@@ -41,6 +39,7 @@ class MembershipServiceTest extends TestCase
             'registration_duration' => '1 year',
             'registration_every_civil_year' => true,
             'cycle_type' => 'abcd',
+            'cycle_duration' => '28 days',
             'use_fly_and_fixed' => false,
             'fly_and_fixed_entity_flying' => 'Membership',
         ];
@@ -217,14 +216,36 @@ class MembershipServiceTest extends TestCase
     // getRemainder()
     // -------------------------------------------------------
 
-    public function testGetRemainderReturnsDateInterval(): void
+    public function testGetRemainderCountsTheDaysLeftBeforeExpiration(): void
     {
-        $service = $this->createService(['registration_every_civil_year' => true]);
+        $service = $this->createService([
+            'registration_every_civil_year' => false,
+            'registration_duration' => '1 year',
+        ]);
 
-        $membership = $this->createMembershipWithRegistration(new \DateTime('now'));
+        // A registration of one year expires the day before its anniversary:
+        // registered 1 year ago + 10 days, it expires in 9 days (at 23:59:59)
+        $membership = $this->createMembershipWithRegistration(new \DateTime('-1 year +10 days'));
         $remainder = $service->getRemainder($membership);
 
         $this->assertInstanceOf(\DateInterval::class, $remainder);
+        $this->assertSame(0, $remainder->invert, 'The membership has not expired yet.');
+        $this->assertSame(9, $remainder->days);
+    }
+
+    public function testGetRemainderIsNegativeOnceExpired(): void
+    {
+        $service = $this->createService([
+            'registration_every_civil_year' => false,
+            'registration_duration' => '1 year',
+        ]);
+
+        // Expired 4 days ago (23:59:59 of that day)
+        $membership = $this->createMembershipWithRegistration(new \DateTime('-1 year -3 days'));
+        $remainder = $service->getRemainder($membership);
+
+        $this->assertSame(1, $remainder->invert, 'The membership has expired.');
+        $this->assertSame(3, $remainder->days);
     }
 
     // -------------------------------------------------------
@@ -300,6 +321,27 @@ class MembershipServiceTest extends TestCase
         $expected = new \DateTime('today');
         $this->assertEquals($expected->format('Y-m-d'), $start->format('Y-m-d'));
         $this->assertEquals('00:00:00', $start->format('H:i:s'));
+    }
+
+    /**
+     * Outside cycles of weeks, a cycle lasts CYCLE_DURATION (C-BUG-4: 28 days
+     * were hardcoded).
+     */
+    public function testCyclesLastTheCycleDurationOutsideCyclesOfWeeks(): void
+    {
+        $service = $this->createService(['cycle_type' => 'custom', 'cycle_duration' => '14 days']);
+        $membership = $this->createMembershipWithRegistration(new \DateTime('now'));
+        $membership->setFirstShiftDate(new \DateTime('today -20 days'));
+
+        $this->assertSame((new \DateTime('today -6 days'))->format('Y-m-d'), $service->getStartOfCycle($membership)->format('Y-m-d'));
+        $this->assertSame((new \DateTime('today +7 days'))->format('Y-m-d') . ' 23:59:59', $service->getEndOfCycle($membership)->format('Y-m-d H:i:s'));
+        $this->assertSame((new \DateTime('today +8 days'))->format('Y-m-d'), $service->getStartOfCycle($membership, 1)->format('Y-m-d'));
+        $this->assertSame(14, $service->getCycleDurationInDays());
+    }
+
+    public function testCyclesOfWeeksAlwaysLastFourWeeks(): void
+    {
+        $this->assertSame(28, $this->createService(['cycle_type' => 'abcd', 'cycle_duration' => '14 days'])->getCycleDurationInDays());
     }
 
     // -------------------------------------------------------

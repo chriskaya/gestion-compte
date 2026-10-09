@@ -9,8 +9,10 @@
 # Usage :
 #   make setup-test    Bootstrap complet (Docker + DB + fixtures)
 #   make test          Tous les tests PHPUnit
-#   make test-unit     Tests unitaires + intégration
-#   make test-func     Tests fonctionnels
+#   make test-unit     Tests unitaires (sans DB)
+#   make test-integration  Tests d'intégration (Kernel + DB)
+#   make test-func     Tests fonctionnels (HTTP + DB)
+#   make test-coverage Tous les tests + couverture (var/coverage/)
 #   make lint          Analyse statique PHPStan
 #   make test-e2e      Tests Cypress E2E (hors OIDC)
 #   make clean         Arrête les conteneurs et supprime les volumes
@@ -22,12 +24,19 @@
 CYPRESS_VERSION      ?= 13.6.4
 CYPRESS_BASE_URL     ?= http://membres.yourcoop.local:8000
 CYPRESS_KEYCLOAK_URL ?= http://localhost:8080
+# HTTP API of the mailcatcher that receives the mails of the E2E application
+CYPRESS_MAILCATCHER_URL ?= http://localhost:1080
+
+# Coverage of the lines changed by a pull request (see `make diff-coverage`)
+DIFF_COVER_COMPARE_BRANCH ?= origin/main
+DIFF_COVER_THRESHOLD      ?= 70
 
 ifdef CI
   EXEC        :=
   _DOCKER_DEP :=
   CYPRESS_CMD  = CYPRESS_BASE_URL=$(CYPRESS_BASE_URL) \
                  CYPRESS_KEYCLOAK_URL=$(CYPRESS_KEYCLOAK_URL) \
+                 CYPRESS_MAILCATCHER_URL=$(CYPRESS_MAILCATCHER_URL) \
                  npx cypress run
 else
   COMPOSE     := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
@@ -37,11 +46,12 @@ else
                  -v $(CURDIR):/e2e -w /e2e \
                  -e CYPRESS_BASE_URL=$(CYPRESS_BASE_URL) \
                  -e CYPRESS_KEYCLOAK_URL=$(CYPRESS_KEYCLOAK_URL) \
+                 -e CYPRESS_MAILCATCHER_URL=$(CYPRESS_MAILCATCHER_URL) \
                  cypress/included:$(CYPRESS_VERSION)
 endif
 
 .PHONY: help check-docker check-hosts setup-test \
-        test test-unit test-func test-coverage lint \
+        test test-unit test-integration test-func test-coverage diff-coverage lint \
         test-e2e test-e2e-main test-e2e-shift test-e2e-membership test-e2e-oidc \
         npm-install encore-build encore-stubs \
         db-reset db-migrate db-fixtures db-fixtures-load \
@@ -113,8 +123,11 @@ clean: ## Arrête les conteneurs et supprime volumes + fichiers générés
 # Dépendances & assets
 # ------------------------------------------------------------------
 
-vendor: $(_DOCKER_DEP)
+# Prérequis composer.json/composer.lock : en CI, le vendor/ restauré du cache
+# peut dater d'un autre lock, et sans eux make le jugerait à jour.
+vendor: composer.json composer.lock $(_DOCKER_DEP)
 	$(EXEC) composer install --no-interaction --prefer-dist
+	@touch vendor
 
 npm-install: ## Installe les paquets NPM
 	npm ci
@@ -161,8 +174,9 @@ setup-test: check-hosts vendor encore-stubs db-fixtures cache-clear ## Bootstrap
 	@echo ""
 	@echo "✅ Environnement de test prêt."
 	@echo "  make test          Tous les tests"
-	@echo "  make test-unit     Unit + intégration"
-	@echo "  make test-func     Fonctionnels"
+	@echo "  make test-unit     Unitaires (sans DB)"
+	@echo "  make test-integration  Intégration (DB)"
+	@echo "  make test-func     Fonctionnels (DB)"
 	@echo "  make lint          Outils de linting"
 	@echo "  make test-e2e      Cypress E2E"
 
@@ -173,14 +187,36 @@ setup-test: check-hosts vendor encore-stubs db-fixtures cache-clear ## Bootstrap
 test: ## Tous les tests PHPUnit
 	$(EXEC) composer test
 
-test-unit: ## Tests unitaires + intégration (sans DB)
+# Chaque test qui démarre le Kernel tourne dans une transaction annulée à sa
+# fin (tests/PHPUnit/DatabaseIsolationExtension.php) : l'ordre des tests ne
+# change rien à l'état de la base qu'ils voient.
+
+test-unit: ## Tests unitaires (TestCase pur, sans DB)
 	$(EXEC) composer test-unit
 
-test-func: ## Tests fonctionnels (avec DB)
+test-integration: ## Tests d'intégration (KernelTestCase + DB : repositories, DQL)
+	$(EXEC) composer test-integration
+
+test-func: ## Tests fonctionnels (HTTP + DB, fixtures par classe)
 	$(EXEC) composer test-functional
 
-test-coverage: ## Tests avec rapport de couverture HTML
+test-coverage: ## Tous les tests + couverture (HTML, Clover, texte) dans var/coverage/
 	$(EXEC) composer test-coverage
+
+# Coverage of the lines this branch changes, read from the Clover report of
+# `make test-coverage`. Fails below DIFF_COVER_THRESHOLD % of the changed
+# executable lines of src/. Needs diff-cover (pip install diff-cover==9.2.0)
+# and DIFF_COVER_COMPARE_BRANCH fetched. The report is also written as
+# Markdown in var/coverage/diff-coverage.md.
+diff-coverage: ## Couverture des lignes modifiées vs DIFF_COVER_COMPARE_BRANCH (seuil DIFF_COVER_THRESHOLD)
+	@test -f var/coverage/clover.xml || { echo "Run make test-coverage first."; exit 1; }
+	@status=0; \
+	diff-cover var/coverage/clover.xml \
+		--compare-branch=$(DIFF_COVER_COMPARE_BRANCH) \
+		--fail-under=$(DIFF_COVER_THRESHOLD) \
+		--markdown-report=var/coverage/diff-coverage.md || status=$$?; \
+	cat var/coverage/diff-coverage.md; \
+	exit $$status
 
 # ------------------------------------------------------------------
 # Analyse statique
@@ -207,19 +243,37 @@ cs-fixer-fix:
 # Tests Cypress E2E
 # ------------------------------------------------------------------
 
+# Database reset between specs: the specs that write to the database (see
+# the "MODIFIES DATABASE" header) leave it in a state the next run cannot
+# start from. Every spec file therefore starts from freshly loaded fixtures
+# (same FIXTURES_SEED, hence the same data), and each file is run by its own
+# Cypress process. Tests of one file share its state, in file order.
+# The reset lives here rather than in a cy.task because, outside CI, Cypress
+# runs in a container that has neither PHP nor the Docker socket.
+# A failing spec does not stop the others; the target fails at the end.
+define run_e2e_specs
+	@rc=0; \
+	for spec in $$(find $(1) -name '*.cy.js' | sort); do \
+		echo "==> $$spec"; \
+		$(MAKE) --no-print-directory db-fixtures-load || exit 1; \
+		$(CYPRESS_CMD) --spec "$$spec" || rc=1; \
+	done; \
+	exit $$rc
+endef
+
 test-e2e: test-e2e-main test-e2e-shift test-e2e-membership ## Tous les tests Cypress (hors OIDC)
 
 test-e2e-main: ## Cypress — tests login
-	$(CYPRESS_CMD) --spec 'cypress/e2e/login/**/*'
+	$(call run_e2e_specs,cypress/e2e/login)
 
 test-e2e-shift: ## Cypress — tests créneaux
-	$(CYPRESS_CMD) --spec 'cypress/e2e/shift/**/*'
+	$(call run_e2e_specs,cypress/e2e/shift)
 
 test-e2e-membership: ## Cypress — tests adhésion
-	$(CYPRESS_CMD) --spec 'cypress/e2e/membership/**/*'
+	$(call run_e2e_specs,cypress/e2e/membership)
 
 test-e2e-oidc: ## Cypress — tests OIDC / Keycloak
-	$(CYPRESS_CMD) --spec 'cypress/e2e/keycloak/**/*'
+	$(call run_e2e_specs,cypress/e2e/keycloak)
 
 # ------------------------------------------------------------------
 # Export anonymisé de la base
